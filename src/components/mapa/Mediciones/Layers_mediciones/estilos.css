@@ -1,0 +1,53 @@
+/* estilos.css  ─ límites visuales del popup */
+.esri-popup__main-container {
+  /* ancho */
+  min-width: 780px !important;
+  max-width: 680px !important;
+
+  /* alto */
+  min-height: 250px !important;
+  max-height: 580px !important;
+
+  /* overflow-y: auto !important; 
+  overflow-x: auto !important;  */
+}
+
+
+.custom-layer-list .esri-layer-list {
+  background-color: #ffffff !important;
+  color: #333333 !important;
+  font-family: 'Segoe UI', sans-serif !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 6px 0 !important;
+}
+
+.custom-layer-list .esri-layer-list__item {
+  padding: 6px 12px !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.custom-layer-list .esri-layer-list__item:last-child {
+  border-bottom: none !important;
+}
+
+.custom-layer-list .esri-layer-list__item-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+.custom-layer-list .esri-layer-list__item-toggle {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 4px !important;
+  background-color: #f0f0f0 !important;
+  border: 1px solid #ccc !important;
+  transition: background-color 0.2s ease;
+}
+
+.custom-layer-list .esri-layer-list__item-toggle:hover {
+  background-color: #e0e0e0 !important;
+}

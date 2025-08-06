@@ -1,0 +1,19 @@
+.my-expand-icon::before {
+    content: "\f015"; /* Ejemplo usando un ícono de FontAwesome (fa-home) */
+    font-family: "Font Awesome 5 Free"; /* Asegúrate de tener FontAwesome cargado */
+    font-weight: 900;
+    font-size: 16px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  .my-collapse-icon::before {
+    content: "\f00d"; /* Ejemplo usando un ícono de FontAwesome (fa-times) */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 16px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+/* Selecciona el botón del Expand y el ícono de Calcite que se usa para mostrar el icono */

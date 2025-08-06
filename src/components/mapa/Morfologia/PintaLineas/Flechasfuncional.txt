@@ -1,0 +1,155 @@
+import { useEffect } from "react";
+import GeoJSONLayer from "@arcgis/core/layers/GeoJSONLayer";
+import TimeSlider from "@arcgis/core/widgets/TimeSlider";
+
+export default function PintarGeoJSON3D({ view }) {
+  const carpeta = "/20210701/";
+  const archivosGeoJSON = [
+    // "20210701_0100.geojson",
+    // "20210701_0200.geojson",
+    // "20210701_0300.geojson",
+    // "20210701_0400.geojson",
+    // "20210701_0500.geojson",
+    // "20210701_0600.geojson",
+    // "20210701_0700.geojson",
+    // "20210701_0800.geojson",
+    "20210701_0900.geojson",
+    "20210701_1000.geojson",
+    "20210701_1100.geojson",
+    "20210701_1200.geojson",
+    "20210701_1300.geojson",
+    "20210701_1400.geojson",
+    "20210701_1500.geojson",
+  ];
+
+  useEffect(() => {
+    if (!view) return;
+
+    const capas = [];
+
+    const cargarCapas = async () => {
+      for (const archivo of archivosGeoJSON) {
+        const url = carpeta + archivo;
+        try {
+          const res = await fetch(url);
+          const geojsonData = await res.json();
+
+          const magnitudes = geojsonData.features
+            .map((f) => f?.properties?.magnitude)
+            .filter((v) => typeof v === "number");
+
+          if (magnitudes.length === 0) {
+            console.warn(`⚠️ Capa sin magnitudes: ${archivo}`);
+            continue;
+          }
+
+          const min = Math.min(...magnitudes);   
+          const max = Math.max(...magnitudes);
+
+          const blob = new Blob([JSON.stringify(geojsonData)], {
+            type: "application/json",
+          });
+          const objectURL = URL.createObjectURL(blob);
+
+          const layer = new GeoJSONLayer({
+            url: objectURL,
+            title: archivo,
+            elevationInfo: { mode: "relative-to-ground", offset: 0 },
+            timeInfo: {
+              startField: "time",
+              endField: "end",
+            },
+            renderer: {
+              type: "simple",
+              symbol: {
+                type: "line-3d",
+                symbolLayers: [
+                  { type: "line", material: { color: "#ffffff" }, size: 2 },
+                ],
+              },
+              visualVariables: [
+                {
+                  type: "color",
+                  field: "magnitude",
+                  stops: [
+                    { value: min, color: "#2DC937" },
+                    { value: min + 0.2 * (max - min), color: "#99C140" },
+                    { value: min + 0.4 * (max - min), color: "#E7B416" },
+                    { value: min + 0.6 * (max - min), color: "#DB7B2B" },
+                    { value: max, color: "#990000" },
+                  ],
+                },
+              ],
+            },
+            popupTemplate: {
+              title: "Vector",
+              content: (feature) =>
+                feature.graphic.attributes
+                  ? `<pre>${JSON.stringify(feature.graphic.attributes, null, 2)}</pre>`
+                  : "Sin atributos",
+            },
+          });
+
+          capas.push(layer); 
+          view.map.add(layer);
+          console.log("✅ Capa añadida:", archivo);
+        } catch (err) {
+          console.error("❌ Error cargando:", archivo, err);
+        }
+      }
+
+      // Esperar a que todas las capas estén listas
+      await Promise.all(capas.map((layer) => layer.when()));
+      console.log("✅ Todas las capas están listas");
+
+      // Crear y añadir el TimeSlider
+      const sliderDiv = document.createElement("div");
+
+      const timeSlider = new TimeSlider({
+        container: sliderDiv,
+        view: view,
+        fullTimeExtent: {
+          start: new Date("2021-07-01T09:00:00Z"),
+          end: new Date("2021-07-01T16:00:00Z"),
+        },
+        values: [
+          new Date("2021-07-01T09:00:00Z"),
+          new Date("2021-07-01T10:00:00Z"),
+        ],
+        stops: {
+          interval: {
+            value: 1,
+            unit: "hours",
+          },
+        },
+      });
+
+      // Activar filtro temporal
+      timeSlider.watch("timeExtent", (timeExtent) => {
+        view.timeExtent = timeExtent;
+        console.log("📆 timeExtent:", {
+          start: timeExtent?.start?.toISOString(),
+          end: timeExtent?.end?.toISOString(),
+        });
+      });
+
+      view.ui.add(timeSlider, "bottom-left");
+
+      // Cleanup function
+      return () => {
+        capas.forEach((layer) => view.map.remove(layer));
+        view.ui.remove(timeSlider);
+      };
+    };
+
+    const cleanupPromise = cargarCapas();
+
+    return () => {
+      cleanupPromise.then((cleanupFn) => {
+        if (cleanupFn) cleanupFn();
+      });
+    };
+  }, [view]);
+
+  return null;
+}

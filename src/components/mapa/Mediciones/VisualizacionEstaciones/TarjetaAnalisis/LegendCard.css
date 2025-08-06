@@ -1,0 +1,33 @@
+.legend-card {
+  position: absolute;
+  bottom: 0px;
+  left: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-family: sans-serif;
+  z-index: 1000;
+  width: 150px;
+  font-size: 12px;
+}
+
+.legend-card .esri-legend__layer-caption,
+.legend-card .esri-legend__message {
+  display: none !important;
+}
+
+.legend-card .esri-legend__layer {
+  margin: 20 !important;
+  padding: 20 !important;
+}
+
+.custom-legend {
+  background-color: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-family: sans-serif;
+  font-size: 12px;
+  max-width: 160px;
+}

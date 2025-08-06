@@ -1,0 +1,85 @@
+import React, { useEffect, useRef, useState, createContext } from "react";
+import PropTypes from "prop-types";
+import {
+  Viewer,
+  Ion,
+  Cartesian3,
+  HeadingPitchRoll,
+  IonGeocodeProviderType,
+  createGooglePhotorealistic3DTileset,
+} from "cesium";
+import "cesium/Build/Cesium/Widgets/widgets.css";
+
+import { getEnvVariables } from "../../../../../helpers/getEnvVariables";
+import ExaggerationControls from "../seleccion/ControleExageracion";
+
+window.CESIUM_BASE_URL = "/cesium";
+Ion.defaultAccessToken = getEnvVariables().VITE_CESIUM_TOKEN;
+
+const TUMACO = { lon: -78.7625, lat: 1.8089, height: 1000 };
+
+export const CesiumContext = createContext({ viewer: null, isReady: false });
+
+const MapaCesium = ({ children }) => {
+  const cesiumRef = useRef(null);
+  const [viewer, setViewer] = useState(null);
+  const [isReady, setIsReady] = useState(false);
+  const [exaggeration, setExaggeration] = useState(1);
+  const [relHeight, setRelHeight] = useState(0);
+
+  useEffect(() => {
+    if (!cesiumRef.current) return;
+
+    const v = new Viewer(cesiumRef.current, {
+      timeline: false,
+      animation: false,
+      sceneModePicker: false,
+      baseLayerPicker: false,
+      geocoder: IonGeocodeProviderType.GOOGLE,
+    });
+
+    v.scene.verticalExaggeration = exaggeration;
+    v.scene.verticalExaggerationRelativeHeight = relHeight;
+    v.scene.skyAtmosphere.show = true;
+
+    v.camera.setView({
+      destination: Cartesian3.fromDegrees(TUMACO.lon, TUMACO.lat, TUMACO.height),
+      orientation: new HeadingPitchRoll(5.79, -0.3, 0.0009),
+    });
+
+    createGooglePhotorealistic3DTileset({ onlyUsingWithGoogleGeocoder: true })
+      .then((tileset) => v.scene.primitives.add(tileset))
+      .catch((err) => console.error("Error al cargar Google 3D Tiles:", err));
+
+    setViewer(v);
+    setIsReady(true);
+
+    return () => {
+      if (!v.isDestroyed()) v.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (viewer) {
+      viewer.scene.verticalExaggeration = exaggeration;
+      viewer.scene.verticalExaggerationRelativeHeight = relHeight;
+      viewer.scene.requestRender();
+    }
+  }, [exaggeration, relHeight, viewer]);
+
+  return (
+    <CesiumContext.Provider value={{ viewer, isReady }}>
+      <div ref={cesiumRef} style={{ width: "100%", height: 700 }} />
+
+
+      {isReady && children}
+    </CesiumContext.Provider>
+  );
+};
+
+MapaCesium.propTypes = {
+  children: PropTypes.node,
+};
+
+export default MapaCesium;
+

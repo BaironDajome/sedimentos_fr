@@ -1,0 +1,96 @@
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Viewer,
+  Ion,
+  Cartesian3,
+  CesiumTerrainProvider, // ✅ Importado directamente
+} from "cesium";
+import "cesium/Build/Cesium/Widgets/widgets.css";
+
+// Configuración del token
+window.CESIUM_BASE_URL = "/cesium";
+Ion.defaultAccessToken = "TU_TOKEN_AQUÍ"; // Asegúrate que VITE_CESIUM_TOKEN esté bien cargado
+
+const MapaCesium = () => {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    let viewerInstance = null;
+
+    const initCesium = async () => {
+      try {
+        const terrainProvider = await CesiumTerrainProvider.fromIonAssetId(2275207, {
+          requestVertexNormals: true,
+        });
+
+        viewerInstance = new Viewer(containerRef.current, {
+          terrainProvider,
+        });
+
+        const scene = viewerInstance.scene;
+        const globe = scene.globe;
+        const camera = scene.camera;
+
+        scene.fog.enabled = false;
+        globe.showGroundAtmosphere = false;
+        globe.enableLighting = true;
+
+        scene.light = new DirectionalLight({
+          direction: new Cartesian3(1, 0, 0),
+        });
+
+        const scratchNormal = new Cartesian3();
+        scene.preRender.addEventListener(() => {
+          const surfaceNormal = globe.ellipsoid.geodeticSurfaceNormal(
+            camera.positionWC,
+            scratchNormal
+          );
+          const negativeNormal = Cartesian3.negate(surfaceNormal, surfaceNormal);
+          scene.light.direction = Cartesian3.normalize(
+            Cartesian3.add(negativeNormal, camera.rightWC, surfaceNormal),
+            scene.light.direction
+          );
+        });
+
+        globe.maximumScreenSpaceError = 1.0;
+
+      } catch (error) {
+        console.error("Error al cargar el mapa:", error);
+      }
+    };
+
+    if (containerRef.current) {
+      initCesium();
+    }
+
+    return () => {
+      if (viewerInstance) viewerInstance.destroy();
+    };
+  }, []);
+
+  return <div ref={containerRef} style={{ width: "100%", height: "100vh" }} />;
+};
+
+export default MapaCesium;
+
+{/* <div
+  style={{
+    position: "absolute",
+    bottom: 200,
+    left: 20,
+    zIndex: 1000,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    padding: "10px",
+    borderRadius: "8px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+  }}
+ >
+
+
+<ExaggerationControls
+exaggeration={exaggeration}
+relHeight={relHeight}
+onExaggerationChange={setExaggeration}
+onRelHeightChange={setRelHeight}
+/> 
+</div> */}

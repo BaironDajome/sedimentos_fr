@@ -1,0 +1,40 @@
+.container {
+  height: 81vh;
+  width: 100%;
+  position: relative;
+}
+.mapWrapper {
+  height: 100%;
+  width: 100%;
+}
+
+.panelWrapper {
+  width: 410px;
+  height: calc(100vh - 120px);
+  background-color: white;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+  border-radius: 0 4px 4px 0;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.actionPanelContainer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  z-index: 1000;
+}
+
+.actionBar {
+  border-radius: 4px 0 0 4px;
+}
+
+/* Ya tenías esta */
+.dropdown-container {
+  position: absolute;
+  top: 30px;
+  left: 100px; /* Ajusta según dónde lo quieras */
+  z-index: 1000;
+}

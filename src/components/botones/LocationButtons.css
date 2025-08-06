@@ -1,0 +1,16 @@
+.location-buttons-container {
+  /* Aseguramos un bloque para que el contenido crezca verticalmente */
+  display: block;
+  /* Un poco de relleno interno */
+  padding: 10px;
+  /* Para evitar que los botones se peguen al borde */
+  box-sizing: border-box;
+  /* Si deseas forzar un ancho mínimo */
+  min-width: 120px;
+}
+
+.location-buttons-container .c-button {
+  /* Margen inferior para separar botones; 
+     si usas <CButtonGroup vertical> puede no ser necesario */
+  margin-bottom: 8px;
+}
