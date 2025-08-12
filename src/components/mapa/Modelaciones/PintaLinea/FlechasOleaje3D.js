@@ -11,11 +11,11 @@ export default function FlechasOleaje3D({ view }) {
     "20241001_0400.geojson", "20241001_0500.geojson", "20241001_0600.geojson",
     "20241001_0700.geojson", "20241001_0800.geojson", "20241001_0900.geojson",
     "20241001_1000.geojson", "20241001_1100.geojson", "20241001_1200.geojson",
-    "20241001_1300.geojson", "20241001_1400.geojson", "20241001_1500.geojson",
+    "20241001_1300.geojson", "20241001_1400.geojson", "20241001_1500.geojson",  
     "20241001_1600.geojson", "20241001_1700.geojson", "20241001_1800.geojson",
   ];
 
-  const sliderRef = useRef(null);
+  const sliderRef = useRef(null);   
   const divRef = useRef(null);
   const urlsCreadas = useRef([]);
   const capas = useRef([]);
