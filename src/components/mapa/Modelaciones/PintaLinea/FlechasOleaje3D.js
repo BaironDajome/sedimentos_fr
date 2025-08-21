@@ -3,7 +3,7 @@ import GeoJSONLayer from "@arcgis/core/layers/GeoJSONLayer";
 import TimeSlider from "@arcgis/core/widgets/TimeSlider";
 
 const LAYER_PREFIX = "oleaje-";
- 
+
 export default function FlechasOleaje3D({ view }) {
   const carpeta = "/oleaje/";
   const archivosGeoJSON = [
@@ -11,11 +11,11 @@ export default function FlechasOleaje3D({ view }) {
     "20241001_0400.geojson", "20241001_0500.geojson", "20241001_0600.geojson",
     "20241001_0700.geojson", "20241001_0800.geojson", "20241001_0900.geojson",
     "20241001_1000.geojson", "20241001_1100.geojson", "20241001_1200.geojson",
-    "20241001_1300.geojson", "20241001_1400.geojson", "20241001_1500.geojson",  
+    "20241001_1300.geojson", "20241001_1400.geojson", "20241001_1500.geojson",
     "20241001_1600.geojson", "20241001_1700.geojson", "20241001_1800.geojson",
   ];
 
-  const sliderRef = useRef(null);   
+  const sliderRef = useRef(null);
   const divRef = useRef(null);
   const urlsCreadas = useRef([]);
   const capas = useRef([]);
@@ -28,20 +28,6 @@ export default function FlechasOleaje3D({ view }) {
     sliderRef.current = true;
 
     const cargarCapas = async () => {
-      const [
-        colorRendererCreator,
-        histogram,
-        ColorSlider,
-        reactiveUtils,
-        Legend
-      ] = await Promise.all([
-        import("@arcgis/core/smartMapping/renderers/color"),
-        import("@arcgis/core/smartMapping/statistics/histogram"),
-        import("@arcgis/core/widgets/smartMapping/ColorSlider"),
-        import("@arcgis/core/core/reactiveUtils"),
-        import("@arcgis/core/widgets/Legend"),
-      ]).then(mods => mods.map(m => m.default));
-
       try {
         for (const archivo of archivosGeoJSON) {
           const url = carpeta + archivo;
@@ -51,13 +37,14 @@ export default function FlechasOleaje3D({ view }) {
           const day = parseInt(nombre.slice(6, 8), 10);
           const hour = parseInt(nombre.slice(9, 11), 10);
           const fecha = new Date(year, month, day, hour);
-          fechas.current.push(fecha);
 
           const res = await fetch(url);
           if (!res.ok) continue;
 
           const geojsonData = await res.json();
-          const blob = new Blob([JSON.stringify(geojsonData)], { type: "application/json" });
+          const blob = new Blob([JSON.stringify(geojsonData)], {
+            type: "application/json",
+          });
           const objectURL = URL.createObjectURL(blob);
           urlsCreadas.current.push(objectURL);
 
@@ -99,6 +86,8 @@ export default function FlechasOleaje3D({ view }) {
             },
           });
 
+          // ⬅️ solo si cargó bien el archivo, añadimos fecha y capa
+          fechas.current.push(fecha);
           view.map.add(layer);
           capas.current.push(layer);
         }
@@ -122,21 +111,23 @@ export default function FlechasOleaje3D({ view }) {
           },
           values: [fechas.current[0]],
           stops: { dates: fechas.current },
-          playRate: 5000,
+          playRate: 10000,
         });
 
         timeSlider.watch("timeExtent", (timeExtent) => {
-          const actual = timeExtent?.start?.getTime();
+          const actual = timeExtent?.start ? timeExtent.start.getTime() : null;
+          if (!actual) return;
 
           capas.current.forEach((layer, idx) => {
-            layer.visible = fechas.current[idx].getTime() === actual;
+            const fecha = fechas.current[idx];
+            if (!fecha) return;
+            layer.visible = fecha.getTime() === actual;
           });
 
           const visibleLayer = capas.current.find(
-            (layer, idx) => fechas.current[idx].getTime() === actual
+            (layer, idx) => fechas.current[idx]?.getTime() === actual
           );
 
-          // Actualizar leyenda
           if (legendWidgetRef.current && visibleLayer) {
             legendWidgetRef.current.layerInfos = [
               {
@@ -152,7 +143,7 @@ export default function FlechasOleaje3D({ view }) {
 
         // Agregar leyenda inicial
         if (!legendWidgetRef.current) {
-          const legend = new Legend({
+          const legend = new (await import("@arcgis/core/widgets/Legend")).default({
             view,
             layerInfos: [
               {
@@ -164,7 +155,6 @@ export default function FlechasOleaje3D({ view }) {
           legendWidgetRef.current = legend;
           view.ui.add(legend, "top-right");
         }
-
       } catch (error) {
         console.error("❌ Error al cargar capas o iniciar slider:", error);
       }

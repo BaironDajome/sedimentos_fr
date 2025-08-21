@@ -4,7 +4,7 @@ const Mediciones = React.lazy(() => import('./views/mediciones/Mediciones'))
 const Sedimentos = React.lazy(() => import('./views/mediciones/Sedimentos'))
 const Morfologia = React.lazy(() => import('./views/morfologia/Morfologia'))
 const Modelaciones = React.lazy(() => import('./views/modelaciones/Modelaciones'))
-const Canales = React.lazy(() => import('./views/variables/perfiles/componentes/mapabase3D/MapaBase3D'))
+const Canales = React.lazy(() => import('./views/canales/Canales'))
 
 const routes = [
   { 

@@ -8,7 +8,7 @@ const CesiumViewer = () => {
   return (
     
         <MapaCesium>
-            <ContenedorMarcadores/>
+            {/* <ContenedorMarcadores/> */}
         </MapaCesium>
     
   );

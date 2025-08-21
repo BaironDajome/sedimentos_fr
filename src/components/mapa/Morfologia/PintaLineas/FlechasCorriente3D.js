@@ -36,7 +36,6 @@ export default function FlechasCorriente3D({ view }) {
           const day = parseInt(nombre.slice(6, 8), 10);
           const hour = parseInt(nombre.slice(9, 11), 10);
           const fecha = new Date(year, month, day, hour);
-          fechas.current.push(fecha);
 
           const res = await fetch(url);
           if (!res.ok) {
@@ -51,7 +50,7 @@ export default function FlechasCorriente3D({ view }) {
             .filter((v) => typeof v === "number");
 
           if (magnitudes.length === 0) {
-            console.warn(`⚠️ Sin magnitudes válidas: ${archivo}`);
+            console.warn(`⚠️ Sin magnitudes válidas en: ${archivo}`);
             continue;
           }
 
@@ -92,6 +91,8 @@ export default function FlechasCorriente3D({ view }) {
             },
           });
 
+          // ✅ Solo agregamos fecha si la capa fue creada
+          fechas.current.push(fecha);
           view.map.add(layer);
           capas.current.push(layer);
         }
@@ -121,9 +122,13 @@ export default function FlechasCorriente3D({ view }) {
         });
 
         timeSlider.watch("timeExtent", (timeExtent) => {
-          const actual = timeExtent?.start?.getTime();
+          const actual = timeExtent?.start ? timeExtent.start.getTime() : null;
+          if (!actual) return;
+
           capas.current.forEach((layer, idx) => {
-            layer.visible = fechas.current[idx].getTime() === actual;
+            const fecha = fechas.current[idx];
+            if (!fecha) return;
+            layer.visible = fecha.getTime() === actual;
           });
         });
 

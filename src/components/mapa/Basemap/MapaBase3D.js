@@ -4,7 +4,6 @@ import SceneView from "@arcgis/core/views/SceneView";
 import Zoom from "@arcgis/core/widgets/Zoom";
 import Compass from "@arcgis/core/widgets/Compass";
 import NavigationToggle from "@arcgis/core/widgets/NavigationToggle";
-import CoordinateConversion from "@arcgis/core/widgets/CoordinateConversion";
 
 const MapaBase3D = ({ setView, children }) => {
   const mapRef = useRef(null);
