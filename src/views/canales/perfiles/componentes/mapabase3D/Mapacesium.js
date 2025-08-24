@@ -1,38 +1,29 @@
 import React, { useEffect, useRef, useState, createContext } from "react";
 import PropTypes from "prop-types";
-import {
-  Viewer,
-  Ion,
-  Cartesian3,
-  HeadingPitchRoll,
-  Cesium3DTileset,
-  createWorldImageryAsync,
-  Cesium3DTileStyle,
-} from "cesium";
+import { Viewer, Ion, createWorldImageryAsync, Rectangle } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
 import { getEnvVariables } from "../../../../../helpers/getEnvVariables";
-import ExaggerationControls from "../seleccion/ControleExageracion";
-import PointCloudControls from "./PointCloudControls"; // Asegúrate de tener este archivo
+import PointCloudControls from "../../../../../components/mapa/Canales/Puertos/PointCloudControls";
+import ControlExageracion from "../../../../../components/mapa/Canales/Puertos/ControlExageracion";
+import LoadTileset from "../../../../../components/mapa/Canales/Puertos//LoadTileset";
 
 window.CESIUM_BASE_URL = "/cesium";
 Ion.defaultAccessToken = getEnvVariables().VITE_CESIUM_TOKEN;
 
-const BUENAVENTURA = { lon: -78.7625, lat: 1.8089, height: 1000 };
-
 export const CesiumContext = createContext({ viewer: null, isReady: false });
+
+const MemoExaggerationControls = React.memo(ControlExageracion);
+const MemoPointCloudControls = React.memo(PointCloudControls);
 
 const MapaCesium = ({ children }) => {
   const cesiumRef = useRef(null);
   const [viewer, setViewer] = useState(null);
   const [isReady, setIsReady] = useState(false);
-  const [tileset, setTileset] = useState(null);
 
-  // Exaggeration state
   const [exaggeration, setExaggeration] = useState(1);
   const [relHeight, setRelHeight] = useState(0);
 
-  // Point cloud shading state
   const [pointCloudOptions, setPointCloudOptions] = useState({
     maximumScreenSpaceError: 16.0,
     geometricErrorScale: 1.0,
@@ -54,6 +45,9 @@ const MapaCesium = ({ children }) => {
       baseLayerPicker: false,
       geocoder: false,
       terrainProvider: undefined,
+      homeButton: true,
+      fullscreenButton: false,
+      navigationHelpButton: false,
     });
 
     createWorldImageryAsync().then((imageryProvider) => {
@@ -61,9 +55,8 @@ const MapaCesium = ({ children }) => {
       v.imageryLayers.addImageryProvider(imageryProvider);
     });
 
-    v.camera.setView({
-      destination: Cartesian3.fromDegrees(BUENAVENTURA.lon, BUENAVENTURA.lat, BUENAVENTURA.height),
-      orientation: new HeadingPitchRoll(5.79, -0.3, 0.0009),
+    v.camera.flyTo({
+      destination: Rectangle.fromDegrees(-180.0, -90.0, 180.0, 90.0),
     });
 
     v.scene.verticalExaggeration = exaggeration;
@@ -77,7 +70,6 @@ const MapaCesium = ({ children }) => {
     };
   }, []);
 
-  // Update exaggeration when changed
   useEffect(() => {
     if (viewer) {
       viewer.scene.verticalExaggeration = exaggeration;
@@ -86,99 +78,60 @@ const MapaCesium = ({ children }) => {
     }
   }, [exaggeration, relHeight, viewer]);
 
-  // Load tileset and apply point cloud shading options
-  useEffect(() => {
-    if (!viewer || !isReady) return;
-
-    let t;
-
-    const loadTileset = async () => {
-      try {
-        t = await Cesium3DTileset.fromUrl("/Canal/tileset.json"); // Cambia si usas Ion
-        viewer.scene.primitives.add(t);
-
-        // Color por altura (opcional)
-        t.style = new Cesium3DTileStyle({
-          color: {
-            conditions: [
-              ["${POSITION}.z >= 100.0", "color('darkred')"],
-              ["${POSITION}.z >= 50.0", "color('red')"],
-              ["${POSITION}.z >= 25.0", "color('orangered')"],
-              ["${POSITION}.z >= 10.0", "color('orange')"],
-              ["${POSITION}.z >= 5.0", "color('gold')"],
-              ["${POSITION}.z >= 2.0", "color('yellow')"],
-              ["${POSITION}.z >= 1.0", "color('lightgreen')"],
-              ["${POSITION}.z >= 0.5", "color('lime')"],
-              ["${POSITION}.z >= 0.1", "color('cyan')"],
-              ["${POSITION}.z >= 0.01", "color('lightblue')"],
-              ["true", "color('blue')"],
-            ],
-          },
-          pointSize: 3.0,
-        });
-
-        // Apply shading options
-        applyPointCloudOptions(t, pointCloudOptions);
-
-        setTileset(t);
-        viewer.zoomTo(t);
-      } catch (error) {
-        console.error("❌ Error al cargar tileset:", error);
-      }
-    };
-
-    loadTileset();
-
-    return () => {
-      if (t && !viewer.isDestroyed()) {
-        viewer.scene.primitives.remove(t);
-      }
-    };
-  }, [viewer, isReady]);
-
-  // Apply shading when options change
-  useEffect(() => {
-    if (tileset) {
-      applyPointCloudOptions(tileset, pointCloudOptions);
-      viewer?.scene.requestRender();
-    }
-  }, [pointCloudOptions, tileset]);
-
-  const applyPointCloudOptions = (tileset, options) => {
-    tileset.maximumScreenSpaceError = options.maximumScreenSpaceError;
-    const shading = tileset.pointCloudShading;
-    shading.geometricErrorScale = options.geometricErrorScale;
-    shading.maximumAttenuation = options.maximumAttenuation;
-    shading.baseResolution = options.baseResolution;
-    shading.eyeDomeLightingStrength = options.eyeDomeLightingStrength;
-    shading.eyeDomeLightingRadius = options.eyeDomeLightingRadius;
-    shading.attenuation = options.attenuation;
-    shading.eyeDomeLighting = options.eyeDomeLighting;
-  };
-
   return (
     <CesiumContext.Provider value={{ viewer, isReady }}>
-      <div style={{ position: "relative", width: "100%", height: 700 }}>
+      <div style={{ width: "100%", height: 790, position: "relative" }}>
         <div ref={cesiumRef} style={{ width: "100%", height: "100%" }} />
 
-        {/* Exaggeration controls - bottom left */}
-        <div style={{ position: "absolute", bottom: 10, left: 10, zIndex: 1 }}>
-          <ExaggerationControls
-            exaggeration={exaggeration}
-            relHeight={relHeight}
-            onExaggerationChange={setExaggeration}
-            onRelHeightChange={setRelHeight}
-          />
-        </div>
+        <style>
+          {`
+            .cesium-viewer-toolbar {
+              top: 10px !important;
+              left: 10px !important;
+              right: auto !important;
+            }
+          `}
+        </style>
 
-        {/* Point Cloud controls - bottom right */}
-        <div style={{ position: "absolute", bottom: 10, right: 10, zIndex: 1 }}>
-          <PointCloudControls
-            options={pointCloudOptions}
-            setOptions={setPointCloudOptions}
-          />
+        {/* Controles personalizados */}
+        <div
+          style={{
+            position: "absolute",
+            left: 10,
+            bottom: 35,
+            display: "flex",
+            flexDirection: "column",
+            gap: 120,
+            alignItems: "flex-start",
+            zIndex: 10,
+          }}
+        >
+          <div style={{ maxWidth: 330 }}>
+            <MemoExaggerationControls
+              exaggeration={exaggeration}
+              relHeight={relHeight}
+              onExaggerationChange={setExaggeration}
+              onRelHeightChange={setRelHeight}
+            />
+          </div>
+
+          <div style={{ maxWidth: 300 }}>
+            <MemoPointCloudControls
+              options={pointCloudOptions}
+              setOptions={setPointCloudOptions}
+            />
+          </div>
         </div>
       </div>
+
+      {/* ✅ aquí cargas tileset con componente externo */}
+      {isReady && viewer && (
+        <LoadTileset
+          viewer={viewer}
+          url="/Canal/Tumaco/2025/tileset.json"
+          pointCloudOptions={pointCloudOptions} 
+        /> 
+      )}
 
       {isReady && children}
     </CesiumContext.Provider>

@@ -1,83 +1,49 @@
-import React, { useState, useEffect, useRef } from "react";
-import "@esri/calcite-components/dist/calcite/calcite.css";
-import { CalciteSlider, CalciteLabel } from "@esri/calcite-components-react";
+// components/ExaggerationControls.jsx
+import React from "react";
+import PropTypes from "prop-types";
 
-export default function ControlExageracion({
-  initialExaggeration = 1,
-  initialRelHeight = 0,
-  onChange,
-}) {
-  const [options, setOptions] = useState({
-    exaggeration: initialExaggeration,
-    relHeight: initialRelHeight,
-  });
-
-  const prevOptionsRef = useRef(options);
-
-  // Notificar al padre solo si realmente cambió
-  useEffect(() => {
-    const prev = prevOptionsRef.current;
-    if (
-      prev.exaggeration !== options.exaggeration ||
-      prev.relHeight !== options.relHeight
-    ) {
-      prevOptionsRef.current = options;
-      if (onChange) onChange(options);
-    }
-  }, [options, onChange]);
-
-  const handleSliderChange = (key) => (e) => {
-    const value = parseFloat(e.target.value);
-    setOptions((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  // Estilos compactos para cada label
-  const labelStyle = {
-    fontSize: 8,
-    marginBottom: 4,
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
-  };
-
+const ControlExageracion = ({ exaggeration, relHeight, onExaggerationChange, onRelHeightChange }) => {
   return (
     <div
       style={{
-        color: "white",
-        padding: 6,
-        borderRadius: 8,
-        width: 300,
-        fontSize: 10,
-        display: "flex",
-        flexDirection: "column",
+        position: "absolute",
+        top: 10,
+        left: 10,
+        background: "rgba(30,30,30,0.7)",
+        padding: "8px 12px",
+        borderRadius: 6,
+        color: "#fff",
+        fontSize: 14,
+        zIndex: 1000,
       }}
     >
-      <CalciteLabel style={labelStyle}>
-        Exageración Z ({options.exaggeration.toFixed(2)}x)
-        <CalciteSlider
+      <div style={{ marginBottom: 6 }}>
+        <label>Exageración Z: {exaggeration}</label>
+        <input
+          type="range"
           min={1}
           max={10}
-          step={0.1}
-          value={options.exaggeration}
-          labelHandles
-          onCalciteSliderInput={handleSliderChange("exaggeration")}
+          step={0.5}
+          value={exaggeration}
+          onChange={(e) => onExaggerationChange(Number(e.target.value))}
+          style={{ width: 140 }}
         />
-      </CalciteLabel>
-
-      <CalciteLabel style={labelStyle}>
-        Altura Relativa ({options.relHeight.toFixed(2)})
-        <CalciteSlider
+      </div>
+      <div>
+        <label>Altura Relativa: {relHeight}</label>
+        <input
+          type="range"
           min={0}
           max={5}
-          step={0.1}
-          value={options.relHeight}
-          labelHandles
-          onCalciteSliderInput={handleSliderChange("relHeight")}
+          step={0.5}
+          value={relHeight}
+          onChange={(e) => onRelHeightChange(Number(e.target.value))}
+          style={{ width: 140 }}
         />
-      </CalciteLabel>
+      </div>
     </div>
   );
-}
+};
+
+
+export default ControlExageracion;

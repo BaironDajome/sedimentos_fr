@@ -4,7 +4,7 @@ import TarjetaPuertos from "./Puertos/TarjetaPuertos";
 import "@esri/calcite-components/dist/calcite/calcite.css";
 import { defineCustomElements } from "@esri/calcite-components/dist/loader";
 import "./Mapa.css";
-import LocalizacionCesium from "./Puertos/LocalizacionCesium";
+import LocalizacionCesium from "../Localizacion/LocalizacionCesium";
 import MapaCesium from "../../../views/canales/perfiles/componentes/mapabase3D/Mapacesium";
 
 // Inicializar Calcite una sola vez
@@ -89,6 +89,8 @@ export const Mapa = () => {
             <TarjetaPuertos
               puertos={puertos}
               onPuertoChange={handlePuertoChange}
+              setPcOptions={handlePcOptionsChangeInternal}
+              handleExaggerationChange={handleExaggerationChangeInternal}
             />
           </div>
         )}
