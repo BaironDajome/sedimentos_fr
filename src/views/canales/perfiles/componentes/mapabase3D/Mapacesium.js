@@ -4,37 +4,25 @@ import { Viewer, Ion, createWorldImageryAsync, Rectangle } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
 import { getEnvVariables } from "../../../../../helpers/getEnvVariables";
-import PointCloudControls from "../../../../../components/mapa/Canales/Puertos/PointCloudControls";
-import ControlExageracion from "../../../../../components/mapa/Canales/Puertos/ControlExageracion";
-import LoadTileset from "../../../../../components/mapa/Canales/Puertos//LoadTileset";
+import LoadTileset from "../../../../../components/mapa/Canales/Puertos/LoadTileset";
 
 window.CESIUM_BASE_URL = "/cesium";
 Ion.defaultAccessToken = getEnvVariables().VITE_CESIUM_TOKEN;
 
 export const CesiumContext = createContext({ viewer: null, isReady: false });
 
-const MemoExaggerationControls = React.memo(ControlExageracion);
-const MemoPointCloudControls = React.memo(PointCloudControls);
-
-const MapaCesium = ({ children }) => {
+const MapaCesium = ({
+  children,
+  exaggeration = 1,
+  relHeight = 0,
+  pointCloudOptions = {},
+  onViewerReady,
+}) => {
   const cesiumRef = useRef(null);
   const [viewer, setViewer] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
-  const [exaggeration, setExaggeration] = useState(1);
-  const [relHeight, setRelHeight] = useState(0);
-
-  const [pointCloudOptions, setPointCloudOptions] = useState({
-    maximumScreenSpaceError: 16.0,
-    geometricErrorScale: 1.0,
-    maximumAttenuation: undefined,
-    baseResolution: undefined,
-    eyeDomeLightingStrength: 1.0,
-    eyeDomeLightingRadius: 1.0,
-    attenuation: true,
-    eyeDomeLighting: true,
-  });
-
+  // Inicializar Cesium Viewer
   useEffect(() => {
     if (!cesiumRef.current) return;
 
@@ -50,37 +38,39 @@ const MapaCesium = ({ children }) => {
       navigationHelpButton: false,
     });
 
+    // Cargar capa de imágenes
     createWorldImageryAsync().then((imageryProvider) => {
       v.imageryLayers.removeAll();
       v.imageryLayers.addImageryProvider(imageryProvider);
     });
 
+    // Posicionar cámara para ver todo el mundo
     v.camera.flyTo({
       destination: Rectangle.fromDegrees(-180.0, -90.0, 180.0, 90.0),
     });
 
-    v.scene.verticalExaggeration = exaggeration;
-    v.scene.verticalExaggerationRelativeHeight = relHeight;
-
     setViewer(v);
     setIsReady(true);
 
-    return () => {
-      if (!v.isDestroyed()) v.destroy();
-    };
-  }, []);
+    if (onViewerReady) onViewerReady(v);
 
+    return () => {
+      if (v && !v.isDestroyed()) v.destroy();
+    };
+  }, [cesiumRef, onViewerReady]);
+
+  // Actualizar exageración vertical solo cuando viewer esté listo
   useEffect(() => {
-    if (viewer) {
-      viewer.scene.verticalExaggeration = exaggeration;
-      viewer.scene.verticalExaggerationRelativeHeight = relHeight;
-      viewer.scene.requestRender();
-    }
+    if (!viewer) return;
+
+    viewer.scene.verticalExaggeration = exaggeration;
+    viewer.scene.verticalExaggerationRelativeHeight = relHeight;
+    viewer.scene.requestRender();
   }, [exaggeration, relHeight, viewer]);
 
   return (
     <CesiumContext.Provider value={{ viewer, isReady }}>
-      <div style={{ width: "100%", height: 790, position: "relative" }}>
+      <div style={{ width: "100%", height: "100%", position: "relative" }}>
         <div ref={cesiumRef} style={{ width: "100%", height: "100%" }} />
 
         <style>
@@ -93,53 +83,27 @@ const MapaCesium = ({ children }) => {
           `}
         </style>
 
-        {/* Controles personalizados */}
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            bottom: 35,
-            display: "flex",
-            flexDirection: "column",
-            gap: 120,
-            alignItems: "flex-start",
-            zIndex: 10,
-          }}
-        >
-          <div style={{ maxWidth: 330 }}>
-            <MemoExaggerationControls
-              exaggeration={exaggeration}
-              relHeight={relHeight}
-              onExaggerationChange={setExaggeration}
-              onRelHeightChange={setRelHeight}
-            />
-          </div>
+        {/* LoadTileset solo cuando viewer y pointCloudOptions estén listos */}
+        {/* {isReady && viewer && pointCloudOptions && (
+          <LoadTileset
+            viewer={viewer}
+            url="/Canal/Tumaco/2025/tileset.json"
+            pointCloudOptions={pointCloudOptions}
+          />
+        )} */}
 
-          <div style={{ maxWidth: 300 }}>
-            <MemoPointCloudControls
-              options={pointCloudOptions}
-              setOptions={setPointCloudOptions}
-            />
-          </div>
-        </div>
+        {isReady && viewer && children}
       </div>
-
-      {/* ✅ aquí cargas tileset con componente externo */}
-      {isReady && viewer && (
-        <LoadTileset
-          viewer={viewer}
-          url="/Canal/Tumaco/2025/tileset.json"
-          pointCloudOptions={pointCloudOptions} 
-        /> 
-      )}
-
-      {isReady && children}
     </CesiumContext.Provider>
   );
 };
 
 MapaCesium.propTypes = {
   children: PropTypes.node,
+  exaggeration: PropTypes.number,
+  relHeight: PropTypes.number,
+  pointCloudOptions: PropTypes.object,
+  onViewerReady: PropTypes.func,
 };
 
 export default MapaCesium;

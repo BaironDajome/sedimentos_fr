@@ -1,20 +1,48 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React, { useEffect, useRef } from "react";
+import "@esri/calcite-components/dist/calcite/calcite.css";
+import { defineCustomElements } from "@esri/calcite-components/dist/loader";
+
+defineCustomElements(window);
 
 export default function PointCloudControls({ options = {}, setOptions }) {
-  const handleChange = (key) => (e) => {
-    const value =
-      e.target.type === "checkbox"
-        ? e.target.checked
-        : parseFloat(e.target.value);
+  const sliderRefs = useRef({});
+  const checkboxRefs = useRef({});
 
-    setOptions((prev) => ({
-      ...prev,
-      [key]: value === 0 ? undefined : value,
-    }));
-  };
+  useEffect(() => {
+    Object.keys(sliderRefs.current).forEach((key) => {
+      const slider = sliderRefs.current[key];
+      slider?.addEventListener("calciteSliderInput", (e) => {
+        const value = parseFloat(e.target.value);
+        setOptions((prev) => ({
+          ...prev,
+          [key]: value === 0 ? undefined : value,
+        }));
+      });
+    });
 
-  // si todavía no hay opciones, evitamos renderizar sliders vacíos
+    Object.keys(checkboxRefs.current).forEach((key) => {
+      const checkbox = checkboxRefs.current[key];
+      checkbox?.addEventListener("calciteCheckboxChange", (e) => {
+        setOptions((prev) => ({
+          ...prev,
+          [key]: e.target.checked,
+        }));
+      });
+    });
+
+    // Cleanup
+    return () => {
+      Object.keys(sliderRefs.current).forEach((key) => {
+        const slider = sliderRefs.current[key];
+        slider?.removeEventListener("calciteSliderInput", () => {});
+      });
+      Object.keys(checkboxRefs.current).forEach((key) => {
+        const checkbox = checkboxRefs.current[key];
+        checkbox?.removeEventListener("calciteCheckboxChange", () => {});
+      });
+    };
+  }, [setOptions]);
+
   if (!options || Object.keys(options).length === 0) {
     return (
       <div style={{ padding: 16, color: "#aaa" }}>
@@ -22,6 +50,20 @@ export default function PointCloudControls({ options = {}, setOptions }) {
       </div>
     );
   }
+
+  const sliders = [
+    { key: "maximumScreenSpaceError", label: "Máx Error de Pantalla", min: 1, max: 64, step: 1, default: 16 },
+    { key: "geometricErrorScale", label: "Escala de Error Geométrico", min: 0, max: 2, step: 0.1, default: 1 },
+    { key: "maximumAttenuation", label: "Máx Atenuación", min: 0, max: 10, step: 0.5, default: 0 },
+    { key: "baseResolution", label: "Resolución Base", min: 0, max: 1, step: 0.01, default: 0 },
+    { key: "eyeDomeLightingStrength", label: "Fuerza EDL", min: 0, max: 5, step: 0.1, default: 1 },
+    { key: "eyeDomeLightingRadius", label: "Radio EDL", min: 0, max: 5, step: 0.1, default: 1 },
+  ];
+
+  const checkboxes = [
+    { key: "attenuation", label: "Atenuación" },
+    { key: "eyeDomeLighting", label: "Iluminación Eye Dome" },
+  ];
 
   return (
     <div
@@ -39,111 +81,31 @@ export default function PointCloudControls({ options = {}, setOptions }) {
         Configuración de Nube de Puntos
       </h4>
 
-      <div style={{ marginBottom: 10 }}>
-        <label>
-          Máx Error de Pantalla: {options.maximumScreenSpaceError ?? 16}
-        </label>
-        <input
-          type="range"
-          min="1"
-          max="64"
-          step="1"
-          value={options.maximumScreenSpaceError ?? 16}
-          onChange={handleChange("maximumScreenSpaceError")}
-          style={{ width: "100%" }}
-        />
-      </div>
+      {sliders.map(({ key, label, min, max, step, default: def }) => (
+        <div key={key} style={{ marginBottom: 12 }}>
+          <label>{label}: {options[key] ?? def}</label>
+          <calcite-slider
+            ref={(el) => (sliderRefs.current[key] = el)}
+            min={min}
+            max={max}
+            step={step}
+            value={options[key] ?? def}
+            snap
+            style={{ width: "100%" }}
+          ></calcite-slider>
+        </div>
+      ))}
 
-      <div style={{ marginBottom: 10 }}>
-        <label>
-          Escala de Error Geométrico: {options.geometricErrorScale ?? 1}
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="2"
-          step="0.1"
-          value={options.geometricErrorScale ?? 1}
-          onChange={handleChange("geometricErrorScale")}
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 10 }}>
-        <label>Máx Atenuación: {options.maximumAttenuation ?? 0}</label>
-        <input
-          type="range"
-          min="0"
-          max="10"
-          step="0.5"
-          value={options.maximumAttenuation ?? 0}
-          onChange={handleChange("maximumAttenuation")}
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 10 }}>
-        <label>Resolución Base: {options.baseResolution ?? 0}</label>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={options.baseResolution ?? 0}
-          onChange={handleChange("baseResolution")}
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 10 }}>
-        <label>Fuerza EDL: {options.eyeDomeLightingStrength ?? 1}</label>
-        <input
-          type="range"
-          min="0"
-          max="5"
-          step="0.1"
-          value={options.eyeDomeLightingStrength ?? 1}
-          onChange={handleChange("eyeDomeLightingStrength")}
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 10 }}>
-        <label>Radio EDL: {options.eyeDomeLightingRadius ?? 1}</label>
-        <input
-          type="range"
-          min="0"
-          max="5"
-          step="0.1"
-          value={options.eyeDomeLightingRadius ?? 1}
-          onChange={handleChange("eyeDomeLightingRadius")}
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 6 }}>
-        <label>
-          <input
-            type="checkbox"
-            checked={options.attenuation ?? false}
-            onChange={handleChange("attenuation")}
-          />
-          &nbsp;Atenuación
-        </label>
-      </div>
-
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={options.eyeDomeLighting ?? false}
-            onChange={handleChange("eyeDomeLighting")}
-          />
-          &nbsp;Iluminación Eye Dome
-        </label>
-      </div>
+      {checkboxes.map(({ key, label }) => (
+        <div key={key} style={{ marginBottom: 6 }}>
+          <calcite-checkbox
+            ref={(el) => (checkboxRefs.current[key] = el)}
+            checked={options[key] ?? false}
+          >
+            {label}
+          </calcite-checkbox>
+        </div>
+      ))}
     </div>
   );
 }
-
-

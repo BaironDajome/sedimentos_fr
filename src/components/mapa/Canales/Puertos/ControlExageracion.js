@@ -1,8 +1,42 @@
 // components/ExaggerationControls.jsx
-import React from "react";
-import PropTypes from "prop-types";
+import React, { useEffect, useRef } from "react";
+import "@esri/calcite-components/dist/calcite/calcite.css";
+import { defineCustomElements } from "@esri/calcite-components/dist/loader";
+
+defineCustomElements(window);
 
 const ControlExageracion = ({ exaggeration, relHeight, onExaggerationChange, onRelHeightChange }) => {
+  const exaggerationRef = useRef(null);
+  const relHeightRef = useRef(null);
+
+  // Vincula eventos una vez que los sliders estén montados
+  useEffect(() => {
+    const exaggerationSlider = exaggerationRef.current;
+    const relHeightSlider = relHeightRef.current;
+
+    if (exaggerationSlider) {
+      exaggerationSlider.addEventListener("calciteSliderInput", (e) => {
+        onExaggerationChange(e.target.value);
+      });
+    }
+
+    if (relHeightSlider) {
+      relHeightSlider.addEventListener("calciteSliderInput", (e) => {
+        onRelHeightChange(e.target.value);
+      });
+    }
+
+    // Cleanup
+    return () => {
+      exaggerationSlider?.removeEventListener("calciteSliderInput", (e) => {
+        onExaggerationChange(e.target.value);
+      });
+      relHeightSlider?.removeEventListener("calciteSliderInput", (e) => {
+        onRelHeightChange(e.target.value);
+      });
+    };
+  }, [onExaggerationChange, onRelHeightChange]);
+
   return (
     <div
       style={{
@@ -15,35 +49,41 @@ const ControlExageracion = ({ exaggeration, relHeight, onExaggerationChange, onR
         color: "#fff",
         fontSize: 14,
         zIndex: 1000,
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+        width: "200px",
       }}
     >
-      <div style={{ marginBottom: 6 }}>
+      {/* Exageración Z */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
         <label>Exageración Z: {exaggeration}</label>
-        <input
-          type="range"
+        <calcite-slider
+          ref={exaggerationRef}
           min={1}
           max={10}
           step={0.5}
           value={exaggeration}
-          onChange={(e) => onExaggerationChange(Number(e.target.value))}
-          style={{ width: 140 }}
-        />
+          snap
+          style={{ width: "100%" }}
+        ></calcite-slider>
       </div>
-      <div>
+
+      {/* Altura Relativa */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
         <label>Altura Relativa: {relHeight}</label>
-        <input
-          type="range"
+        <calcite-slider
+          ref={relHeightRef}
           min={0}
           max={5}
           step={0.5}
           value={relHeight}
-          onChange={(e) => onRelHeightChange(Number(e.target.value))}
-          style={{ width: 140 }}
-        />
+          snap
+          style={{ width: "100%" }}
+        ></calcite-slider>
       </div>
     </div>
   );
 };
-
 
 export default ControlExageracion;
