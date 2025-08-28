@@ -10,6 +10,7 @@ import PointCloudControls from "./Puertos/PointCloudControls";
 import ControlExageracion from "./Puertos/ControlExageracion";
 import LoadTileset from "./Puertos/LoadTileset";
 import Boyas3D from "./Puertos/Boyas3D";
+import Navegar from "./Puertos/Navegar"; // 👈 importar el componente
 
 // Inicializar Calcite una sola vez
 defineCustomElements(window);
@@ -19,6 +20,15 @@ export const Mapa = () => {
   const [panelActivo, setPanelActivo] = useState(null);
   const [puertoSeleccionado, setPuertoSeleccionado] = useState(null);
   const [puertos, setPuertos] = useState([]);
+  const [glbUrl, setGlbUrl] = useState("/boyas/barco5.glb");
+  // Estados para toggles
+  const [mostrarBoyas, setMostrarBoyas] = useState(false);
+  const [mostrarSedimento, setMostrarSedimento] = useState(false);
+  const [mostrarNavegar, setMostrarNavegar] = useState(false); // 👈 NUEVO
+
+  // Estados para las URLs dinámicas
+  const [tilesetUrl, setTilesetUrl] = useState(null);
+  const [boyasUrl, setBoyasUrl] = useState(null);
 
   // Estados de exageración y pointCloud
   const [exaggeration, setExaggeration] = useState(1);
@@ -58,6 +68,36 @@ export const Mapa = () => {
     }
   };
 
+  // 🟢 Tileset dinámico
+  useEffect(() => {
+    if (!mostrarSedimento) {
+      setTilesetUrl(null);
+      return;
+    }
+    if (puertoSeleccionado === "Tumaco") {
+      setTilesetUrl("/Canales/Tumaco/2025/tileset.json");
+    } else if (puertoSeleccionado === "Buenaventura") {
+      setTilesetUrl("/Canales/BuenaVentura/2025/tileset.json");
+    } else {
+      setTilesetUrl(null);
+    }
+  }, [mostrarSedimento, puertoSeleccionado]);
+
+  // 🟢 Boyas dinámicas
+  useEffect(() => {
+    if (!mostrarBoyas) {
+      setBoyasUrl(null);
+      return;
+    }
+    if (puertoSeleccionado === "Tumaco") {
+      setBoyasUrl("/Canales/Tumaco/boyas/boyas.json");
+    } else if (puertoSeleccionado === "Buenaventura") {
+      setBoyasUrl("/Canales/BuenaVentura/boyas/boyas.json");
+    } else {
+      setBoyasUrl(null);
+    }
+  }, [mostrarBoyas, puertoSeleccionado]);
+
   return (
     <div style={{ height: "81vh", width: "100%", position: "relative" }}>
       {/* Mapa 3D Cesium */}
@@ -65,10 +105,24 @@ export const Mapa = () => {
         exaggeration={exaggeration}
         relHeight={relHeight}
         pointCloudOptions={pointCloudOptions}
-        onViewerReady={setViewer} // Levanta el viewer al padre
+        onViewerReady={setViewer}
       >
         <LocalizacionCesium localizar={puertoSeleccionado} />
-        <Boyas3D /> {/* Carga boyas desde JSON */}
+
+        {/* Boyas */}
+        {boyasUrl && <Boyas3D url={boyasUrl} />}
+
+        {/* Tileset */}
+        {tilesetUrl && (
+          <LoadTileset
+            viewer={viewer}
+            url={tilesetUrl}
+            pointCloudOptions={pointCloudOptions}
+          />
+        )}
+
+        {/* Navegar */}
+        {mostrarNavegar && <Navegar viewer={viewer} glbUrl={glbUrl} boyasUrl={boyasUrl}/>}
       </MapaCesium>
 
       {/* Controles de exageración y PointCloud */}
@@ -100,15 +154,6 @@ export const Mapa = () => {
             />
           </div>
         </div>
-      )}
-
-      {/* LoadTileset externo */}
-      {viewer && (
-        <LoadTileset
-          viewer={viewer}
-          url="/Canal/Tumaco/2025/tileset.json"
-          pointCloudOptions={pointCloudOptions}
-        />
       )}
 
       {/* Sidebar derecho */}
@@ -146,7 +191,16 @@ export const Mapa = () => {
 
         {panelActivo === "modelos" && (
           <div className="panelWrapper">
-            <TarjetaPuertos puertos={puertos} onPuertoChange={handlePuertoChange} />
+            <TarjetaPuertos
+              puertos={puertos}
+              onPuertoChange={handlePuertoChange}
+              mostrarBoyas={mostrarBoyas}
+              onToggleBoyas={setMostrarBoyas}
+              mostrarSedimento={mostrarSedimento}
+              onToggleSedimento={setMostrarSedimento}
+              mostrarNavegar={mostrarNavegar}               // 👈 nuevo
+              onToggleNavegar={setMostrarNavegar}           // 👈 nuevo
+            />
           </div>
         )}
       </div>

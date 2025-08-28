@@ -6,7 +6,8 @@ import "@esri/calcite-components/dist/calcite/calcite.css";
 import Localizacion from "../Localizacion/Localizacion";
 import "./Mapa.css";
 import MapaBase3D from "../Basemap/MapaBase3D";
-import TarjetaOleaje from "./Puertos/TarjetaOleaje";
+import TarjetaOleaje from "./Oleaje/TarjetaOleaje";
+
 
 defineCustomElements(window);
 
